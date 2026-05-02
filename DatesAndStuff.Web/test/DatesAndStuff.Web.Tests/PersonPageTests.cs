@@ -97,8 +97,10 @@ public class PersonPageTests
         Assert.That(verificationErrors.ToString(), Is.EqualTo(""));
     }
 
-    [Test]
-    public void Person_SalaryIncrease_ShouldIncrease()
+    [TestCase(5, 5250)]
+    [TestCase(10, 5500)]
+    [TestCase(0, 5000)]
+    public void Person_SalaryIncrease_ShouldIncrease(double percentage, double expectedSalary)
     {
         // Arrange
         driver.Navigate().GoToUrl(BaseURL);
@@ -106,20 +108,119 @@ public class PersonPageTests
 
         var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
 
-        var input = wait.Until(ExpectedConditions.ElementExists(By.XPath("//*[@data-test='SalaryIncreasePercentageInput']")));
-        input.Clear();
-        input.SendKeys("5");
+        var inputLocator = By.XPath("//*[@data-test='SalaryIncreasePercentageInput']");
+        var submitLocator = By.XPath("//*[@data-test='SalaryIncreaseSubmitButton']");
+        var salaryLocator = By.XPath("//*[@data-test='DisplayedSalary']");
+
+        wait.Until(d =>
+        {
+            try
+            {
+                var input = d.FindElement(inputLocator);
+                input.Clear();
+                input.SendKeys(percentage.ToString());
+                return true;
+            }
+            catch (StaleElementReferenceException)
+            {
+                return false;
+            }
+        });
+
 
         // Act
-        var submitButton = wait.Until(ExpectedConditions.ElementExists(By.XPath("//*[@data-test='SalaryIncreaseSubmitButton']")));
-        submitButton.Click();
+        wait.Until(d =>
+        {
+            try
+            {
+                var submitButton = d.FindElement(submitLocator);
+                submitButton.Click();
+                return true;
+            }
+            catch (StaleElementReferenceException)
+            {
+                return false;
+            }
+        });
+        double salaryAfterSubmission = 0;
 
+        wait.Until(d =>
+        {
+            try
+            {
+                var salaryLabel = d.FindElement(salaryLocator);
+                salaryAfterSubmission = double.Parse(salaryLabel.Text);
+                return true;
+            }
+            catch (StaleElementReferenceException)
+            {
+                return false;
+            }
+        });
+
+        
+        // Assert
+        salaryAfterSubmission.Should().BeApproximately(expectedSalary, 0.001);
+    }
+
+
+    [Test]
+    public void SalaryDecrease_SmallerThanMinus10_ShouldDisplayError()
+    {
+        // Arrange
+        driver.Navigate().GoToUrl(BaseURL);
+        driver.FindElement(By.XPath("//*[@data-test='PersonPageNavigation']")).Click();
+
+        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
+
+        var inputLocator = By.XPath("//*[@data-test='SalaryIncreasePercentageInput']");
+        var submitLocator = By.XPath("//*[@data-test='SalaryIncreaseSubmitButton']");
+
+        var upperTextLocator = By.XPath("//li[contains(@class,'validation-message')]");
+        var lowerTextLocator = By.XPath("//div[contains(@class,'validation-message')]");
+
+        wait.Until(d =>
+        {
+            try
+            {
+                var input = d.FindElement(inputLocator);
+                input.Clear();
+                input.SendKeys("-11");
+                return true;
+            }
+            catch (StaleElementReferenceException)
+            {
+                return false;
+            }
+        });
+
+        // Act
+        wait.Until(d =>
+        {
+            try
+            {
+                var submitButton = d.FindElement(submitLocator);
+                submitButton.Click();
+                return true;
+            }
+            catch (StaleElementReferenceException)
+            {
+                return false;
+            }
+        });
 
         // Assert
-        var salaryLabel = wait.Until(ExpectedConditions.ElementExists(By.XPath("//*[@data-test='DisplayedSalary']")));
-        var salaryAfterSubmission = double.Parse(salaryLabel.Text);
-        salaryAfterSubmission.Should().BeApproximately(5250, 0.001);
+
+       var upperText = wait.Until(ExpectedConditions.ElementExists(upperTextLocator));
+       var lowerText = wait.Until(ExpectedConditions.ElementExists(lowerTextLocator));
+
+       upperText.Should().NotBeNull();
+       lowerText.Should().NotBeNull();
+
     }
+
+
+
     private bool IsElementPresent(By by)
     {
         try

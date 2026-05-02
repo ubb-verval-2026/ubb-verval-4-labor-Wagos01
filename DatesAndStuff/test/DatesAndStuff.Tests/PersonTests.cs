@@ -102,12 +102,36 @@ public class PersonTests
     [Test]
     public void IncreaseSalary_NegativeIncrease_ShouldDecrease()
     {
-        // throw new NotImplementedException();
+        // Arrange
+        var sut = PersonFactory.CreateTestPerson();
+
+        double initialSalary = sut.Salary;
+        double decreasePercentage = -9;
+
+        // Act
+        sut.IncreaseSalary(decreasePercentage);
+        
+
+        // Assert
+        sut.Salary.Should().BeApproximately(initialSalary * (100 + decreasePercentage) / 100, Math.Pow(10, -8), because: "numerical salary calculation might be rounded to conform legal stuff");
     }
+
+
 
     [Test]
     public void IncreaseSalary_SmallerThanMinusTenPerc_ShouldFail()
     {
-        // throw new NotImplementedException();
+        // Arrange
+        var sut = PersonFactory.CreateTestPerson();
+
+        double initialSalary = sut.Salary;
+        double decreasePercentage = -11;
+
+        // Act
+        Action act = () => sut.IncreaseSalary(decreasePercentage);
+       
+
+        // Assert
+        act.Should().Throw<ArgumentOutOfRangeException>();
     }
 }

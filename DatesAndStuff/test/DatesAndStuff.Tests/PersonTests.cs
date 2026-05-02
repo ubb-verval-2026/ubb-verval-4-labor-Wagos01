@@ -125,14 +125,13 @@ public class PersonTests
         var sut = PersonFactory.CreateTestPerson();
 
         double initialSalary = sut.Salary;
-        double decreasePercentage = -10;
+        double decreasePercentage = -11;
 
         // Act
-        sut.IncreaseSalary(decreasePercentage);
-
+        Action act = () => sut.IncreaseSalary(decreasePercentage);
+       
 
         // Assert
-        Action act = () => sut.IncreaseSalary(decreasePercentage);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 }
